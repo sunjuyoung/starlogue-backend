@@ -74,4 +74,3 @@ if (failed) darkHistoryService.create(...);
 //  Facade를 통해 단일 호출 (간단)
 facade.endStudy(sessionId);  // 내부에서 모든 처리
 ```
-

@@ -43,7 +43,10 @@ public class StudyFacadeService {
         dailyRecordService.getOrCreateTodayRecord(userId);
 
         // 세션 시작
-        return sessionService.startSession(userId, tagId, pledgeContent, targetMinutes);
+        StudySession session = sessionService.startSession(userId, tagId, pledgeContent, targetMinutes);
+
+        // DTO 변환용으로 fetch join된 세션 조회
+        return sessionService.getSessionWithDetails(session.getId());
     }
 
     /**
@@ -52,7 +55,7 @@ public class StudyFacadeService {
     @Transactional
     public StudySession pauseStudy(UUID sessionId, StopReason reason, int expectedMinutes) {
         sessionService.stopSession(sessionId, reason, expectedMinutes);
-        return sessionService.getSession(sessionId);
+        return sessionService.getSessionWithDetails(sessionId);
     }
 
     /**
@@ -60,7 +63,8 @@ public class StudyFacadeService {
      */
     @Transactional
     public StudySession resumeStudy(UUID sessionId) {
-        return sessionService.resumeSession(sessionId);
+        sessionService.resumeSession(sessionId);
+        return sessionService.getSessionWithDetails(sessionId);
     }
 
     /**
@@ -69,10 +73,13 @@ public class StudyFacadeService {
     @Transactional
     public SessionEndResult endStudy(UUID sessionId) {
         // 세션 종료
-        StudySession session = sessionService.endSession(sessionId);
+        sessionService.endSession(sessionId);
 
         // DailyRecord에 결과 반영
         dailyRecordService.addSessionResult(sessionId);
+
+        // DTO 변환용으로 fetch join된 세션 조회
+        StudySession session = sessionService.getSessionWithDetails(sessionId);
 
         return new SessionEndResult(
                 session,
@@ -87,8 +94,11 @@ public class StudyFacadeService {
      */
     @Transactional
     public SessionEndResult abandonStudy(UUID sessionId) {
-        StudySession session = sessionService.abandonSession(sessionId);
+        sessionService.abandonSession(sessionId);
         dailyRecordService.addSessionResult(sessionId);
+
+        // DTO 변환용으로 fetch join된 세션 조회
+        StudySession session = sessionService.getSessionWithDetails(sessionId);
 
         return new SessionEndResult(
                 session,
@@ -149,7 +159,7 @@ public class StudyFacadeService {
      */
     @Transactional(readOnly = true)
     public CurrentStudyStatus getCurrentStatus(UUID userId) {
-        Optional<StudySession> activeSession = sessionService.getCurrentSession(userId);
+        Optional<StudySession> activeSession = sessionService.getCurrentSessionWithDetails(userId);
         DailyRecord todayRecord = dailyRecordService.getOrCreateTodayRecord(userId);
 
         return new CurrentStudyStatus(

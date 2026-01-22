@@ -10,6 +10,7 @@ import com.example.starlogue.repository.DarkHistoryRepository;
 import com.example.starlogue.repository.StopEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,10 @@ public class DarkHistoryService {
     private final DarkHistoryRepository darkHistoryRepository;
     private final DailyRecordRepository dailyRecordRepository;
     private final StopEventRepository stopEventRepository;
-    // private final AiService aiService; // TODO: Spring AI 연동 시 추가
+    private final DarkHistoryAiService aiService;
+
+    @Value("${starlogue.ai.dark-history.enabled:true}")
+    private boolean aiEnabled;
 
     /**
      * 흑역사 생성 (실패한 DailyRecord에 대해)
@@ -49,7 +53,7 @@ public class DarkHistoryService {
         }
 
         // 흑역사 생성에 필요한 데이터 수집
-        DarkHistoryContext context = collectContext(record);
+        DarkHistoryContextInternal context = collectContext(record);
 
         // 풍자 레벨 결정
         SatireLevel satireLevel = determineSatireLevel(context);
@@ -150,7 +154,7 @@ public class DarkHistoryService {
                 .orElseThrow(() -> new IllegalArgumentException("흑역사를 찾을 수 없습니다."));
 
         DailyRecord record = darkHistory.getDailyRecord();
-        DarkHistoryContext context = collectContext(record);
+        DarkHistoryContextInternal context = collectContext(record);
 
         String newContent = generateDarkHistoryContent(context, darkHistory.getSatireLevel());
         darkHistory.regenerate(newContent);
@@ -165,7 +169,7 @@ public class DarkHistoryService {
     /**
      * 흑역사 생성에 필요한 컨텍스트 수집
      */
-    private DarkHistoryContext collectContext(DailyRecord record) {
+    private DarkHistoryContextInternal collectContext(DailyRecord record) {
         List<StudySession> sessions = record.getSessions();
 
         // 다짐 수집 (첫 번째 세션의 다짐 사용)
@@ -196,7 +200,7 @@ public class DarkHistoryService {
                 .filter(se -> se.getReason().name().equals("DISTRACTION"))
                 .count();
 
-        return new DarkHistoryContext(
+        return new DarkHistoryContextInternal(
                 pledge, studyMinutes, brokenPromiseCount, maxSeverity, (int) distractionCount
         );
     }
@@ -204,7 +208,7 @@ public class DarkHistoryService {
     /**
      * 풍자 레벨 결정
      */
-    private SatireLevel determineSatireLevel(DarkHistoryContext context) {
+    private SatireLevel determineSatireLevel(DarkHistoryContextInternal context) {
         // 딴짓 자백이 있으면 강한 풍자
         if (context.distractionCount() >= 2) {
             return SatireLevel.STRONG;
@@ -214,11 +218,30 @@ public class DarkHistoryService {
     }
 
     /**
-     * 흑역사 콘텐츠 생성 (AI 연동 전 임시 구현)
-     * TODO: Spring AI 연동 시 실제 AI 호출로 대체
+     * 흑역사 콘텐츠 생성 (AI 사용)
      */
-    private String generateDarkHistoryContent(DarkHistoryContext context, SatireLevel level) {
-        // 임시 템플릿 기반 생성
+    private String generateDarkHistoryContent(DarkHistoryContextInternal context, SatireLevel level) {
+        if (!aiEnabled) {
+            log.info("AI 비활성화 - 폴백 콘텐츠 사용");
+            return generateFallbackContent(context, level);
+        }
+
+        // AI 서비스용 컨텍스트 변환
+        DarkHistoryAiService.DarkHistoryContext aiContext = DarkHistoryAiService.DarkHistoryContext.of(
+                context.pledge(),
+                context.studyMinutes(),
+                context.brokenPromiseCount(),
+                context.distractionCount(),
+                level
+        );
+
+        return aiService.generateDarkHistory(aiContext);
+    }
+
+    /**
+     * AI 실패 시 폴백 콘텐츠 (기존 템플릿 방식)
+     */
+    private String generateFallbackContent(DarkHistoryContextInternal context, SatireLevel level) {
         return switch (level) {
             case MILD -> generateMildContent(context);
             case MODERATE -> generateModerateContent(context);
@@ -226,7 +249,7 @@ public class DarkHistoryService {
         };
     }
 
-    private String generateMildContent(DarkHistoryContext context) {
+    private String generateMildContent(DarkHistoryContextInternal context) {
         return String.format(
                 "오늘도 용감하게 '%s'를 선언했다. %d분간의 분투 끝에... 내일을 기약하기로 했다. " +
                         "그것만으로도 대단하다. 아마도.",
@@ -234,7 +257,7 @@ public class DarkHistoryService {
         );
     }
 
-    private String generateModerateContent(DarkHistoryContext context) {
+    private String generateModerateContent(DarkHistoryContextInternal context) {
         return String.format(
                 "'%s' - 이 거창한 다짐의 결과는 %d분이었다. " +
                         "약속을 %d번 어긴 것은 덤이다. 수학적으로 계산하면... 그만 알아보자.",
@@ -242,7 +265,7 @@ public class DarkHistoryService {
         );
     }
 
-    private String generateStrongContent(DarkHistoryContext context) {
+    private String generateStrongContent(DarkHistoryContextInternal context) {
         return String.format(
                 "'%s'라고 적어놓고 '딴짓'을 %d번 자백한 용기만큼은 인정한다. " +
                         "%d분간의 처절한 사투... 의 대부분은 딴짓이었다는 건 안 비밀.",
@@ -251,9 +274,9 @@ public class DarkHistoryService {
     }
 
     /**
-     * 흑역사 생성 컨텍스트
+     * 흑역사 생성 컨텍스트 (내부용)
      */
-    private record DarkHistoryContext(
+    private record DarkHistoryContextInternal(
             String pledge,
             int studyMinutes,
             int brokenPromiseCount,

@@ -6,7 +6,8 @@ public enum SessionStatus {
     PAUSED("일시 중단"),
     COMPLETED("성공 완료"),
     FAILED("실패"),
-    ABANDONED("포기");  // 사용자가 명시적으로 포기
+    ABANDONED("포기"),      // 사용자가 명시적으로 포기
+    DESERTED("탈주");       // 연결 끊김 후 유예 시간 초과
 
     private final String description;
 
@@ -19,6 +20,6 @@ public enum SessionStatus {
     }
 
     public boolean isFinished() {
-        return this == COMPLETED || this == FAILED || this == ABANDONED;
+        return this == COMPLETED || this == FAILED || this == ABANDONED || this == DESERTED;
     }
 }

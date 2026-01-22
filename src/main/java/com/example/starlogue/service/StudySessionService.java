@@ -213,10 +213,25 @@ public class StudySessionService {
     }
 
     /**
+     * 세션 조회 (User, Tag fetch join - DTO 변환용)
+     */
+    public StudySession getSessionWithDetails(UUID sessionId) {
+        return sessionRepository.findByIdWithUserAndTag(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다: " + sessionId));
+    }
+
+    /**
      * 현재 진행 중인 세션 조회
      */
     public Optional<StudySession> getCurrentSession(UUID userId) {
         return sessionRepository.findByUserIdAndStatus(userId, SessionStatus.IN_PROGRESS);
+    }
+
+    /**
+     * 현재 진행 중인 세션 조회 (User, Tag fetch join - DTO 변환용)
+     */
+    public Optional<StudySession> getCurrentSessionWithDetails(UUID userId) {
+        return sessionRepository.findByUserIdAndStatusWithUserAndTag(userId, SessionStatus.IN_PROGRESS);
     }
 
     /**

@@ -24,18 +24,45 @@ repositories {
 	mavenCentral()
 }
 
+ext {
+	set('springAiVersion', "1.1.2")
+}
+
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'com.github.f4b6a3:uuid-creator:6.0.0'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// JWT
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+	// WebSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+
+	// pgvector
+	implementation 'com.pgvector:pgvector:0.1.6'
+	// Spring AI
+	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+
+	implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	runtimeOnly 'org.postgresql:postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
-
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+	}
+}
 tasks.named('test') {
 	useJUnitPlatform()
 }

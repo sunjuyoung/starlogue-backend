@@ -73,6 +73,9 @@ public class StudySession extends AbstractEntity {
     @Column(nullable = false)
     private Integer brokenPromiseCount = 0;  // 약속 어김 횟수
 
+    @Column(nullable = false)
+    private Boolean paused = false;  // 현재 중단 상태
+
     // === 중단 이벤트 ===
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("stoppedAt ASC")
@@ -114,6 +117,7 @@ public class StudySession extends AbstractEntity {
                 .build();
 
         this.stopEvents.add(stopEvent);
+        this.paused = true;
         return stopEvent;
     }
 
@@ -132,6 +136,7 @@ public class StudySession extends AbstractEntity {
 
         // 중단 시간 누적
         this.totalPauseSeconds += stopEvent.getActualPauseSeconds();
+        this.paused = false;
     }
 
     /**
@@ -184,9 +189,7 @@ public class StudySession extends AbstractEntity {
      * 현재 중단 중인지 확인
      */
     public boolean isPaused() {
-        if (stopEvents.isEmpty()) return false;
-        StopEvent lastStop = stopEvents.get(stopEvents.size() - 1);
-        return lastStop.getResumedAt() == null;
+        return this.paused;
     }
 
     /**
@@ -194,6 +197,15 @@ public class StudySession extends AbstractEntity {
      */
     public void forceFailure() {
         this.status = SessionStatus.FAILED;
+        this.isSuccess = false;
+        this.endedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 탈주(DESERTED) 처리 - 연결 끊김 후 유예 시간 초과
+     */
+    public void markAsDeserted() {
+        this.status = SessionStatus.DESERTED;
         this.isSuccess = false;
         this.endedAt = LocalDateTime.now();
     }

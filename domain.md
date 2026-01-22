@@ -252,14 +252,33 @@ public class DailyRecord { ... }
 | `user_id, record_date DESC` | 공부 은하수 시각화 (최신순) |
 
 ---
+## 🗄️ Repository 계층
 
-## 📝 다음 단계
+```
+domain/
+├── user/
+│   └── UserRepository.java
+├── tag/
+│   └── TagRepository.java
+├── session/
+│   ├── StudySessionRepository.java
+│   └── StopEventRepository.java
+├── daily/
+│   ├── DailyRecordRepository.java
+│   └── HighlightReportRepository.java
+└── penalty/
+    └── DarkHistoryRepository.java
+```
 
-1. **Repository 인터페이스** 작성
-2. **Service 계층** 비즈니스 로직 구현
-3. **AI 통합** (Spring AI 1.0.3)
-    - 흑역사 생성 서비스
-    - 하이라이트 리포트 생성 서비스
-4. **스케줄러** 구현
-    - 일일 정산 (00:00 또는 사용자 설정 시간)
-    - 장기 미활동 세션 자동 종료
+### 주요 쿼리 메서드
+
+| Repository | 핵심 메서드 | 용도 |
+|------------|------------|------|
+| `StudySessionRepository` | `findByUserIdAndStatus()` | 진행 중 세션 조회 |
+| | `findByUserIdAndDate()` | 특정 날짜 세션들 |
+| | `findStaleInProgressSessions()` | 장기 미활동 세션 (배치) |
+| `DailyRecordRepository` | `findByUserIdAndPeriod()` | 공부 은하수 시각화 |
+| | `findStreakRecords()` | 별자리 연결 |
+| | `findPendingRecords()` | 미정산 기록 (배치) |
+| `DarkHistoryRepository` | `findUnacknowledged()` | 미확인 흑역사 알림 |
+| | `findPublicDarkHistories()` | 커뮤니티 피드 |

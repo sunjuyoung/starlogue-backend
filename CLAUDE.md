@@ -46,5 +46,4 @@ Entry point: `StarlogueApplication.java`
 - **Lombok** - Annotation-based boilerplate reduction (@Data, @Builder, etc.)
 
 ## Current State
-
-This is an early-stage project (0.0.1-SNAPSHOT) with the basic Spring Boot structure in place. The domain model `DailyStudyPlan` exists but needs implementation. No database is configured yet in `application.yaml`.
+ domain.md, entity.md , api.md, service.md   참조

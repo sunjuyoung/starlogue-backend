@@ -34,6 +34,9 @@ public class User extends AbstractEntity {
     @Column(length = 100)
     private String providerId;
 
+    @Column(length = 100)
+    private String password;  // LOCAL 인증 시 사용
+
     // 누적 통계 (비정규화: 조회 성능 최적화)
     @Column(nullable = false)
     private Integer totalStudyMinutes = 0;
@@ -61,12 +64,13 @@ public class User extends AbstractEntity {
 
     @Builder
     public User(String email, String nickname, String profileImageUrl,
-                AuthProvider authProvider, String providerId) {
+                AuthProvider authProvider, String providerId, String password) {
         this.email = email;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
         this.authProvider = authProvider;
         this.providerId = providerId;
+        this.password = password;
     }
 
     // === 비즈니스 메서드 ===

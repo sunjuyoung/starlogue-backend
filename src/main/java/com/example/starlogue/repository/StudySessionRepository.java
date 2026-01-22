@@ -17,6 +17,21 @@ import java.util.UUID;
 
 public interface StudySessionRepository extends JpaRepository<StudySession, UUID> {
 
+    // === Fetch Join 조회 (DTO 변환용) ===
+
+    @Query("SELECT s FROM StudySession s " +
+            "LEFT JOIN FETCH s.user " +
+            "LEFT JOIN FETCH s.tag " +
+            "WHERE s.id = :sessionId")
+    Optional<StudySession> findByIdWithUserAndTag(@Param("sessionId") UUID sessionId);
+
+    @Query("SELECT s FROM StudySession s " +
+            "LEFT JOIN FETCH s.user " +
+            "LEFT JOIN FETCH s.tag " +
+            "WHERE s.user.id = :userId AND s.status = :status")
+    Optional<StudySession> findByUserIdAndStatusWithUserAndTag(@Param("userId") UUID userId,
+                                                                @Param("status") SessionStatus status);
+
     // === 진행 중인 세션 조회 ===
 
     // 사용자의 현재 진행 중인 세션 (1개만 허용하는 경우)
@@ -24,6 +39,11 @@ public interface StudySessionRepository extends JpaRepository<StudySession, UUID
 
     // 진행 중인 세션 존재 여부
     boolean existsByUserIdAndStatus(UUID userId, SessionStatus status);
+
+    // 여러 상태 중 하나에 해당하는 세션 조회 (IN_PROGRESS 또는 PAUSED)
+    @Query("SELECT s FROM StudySession s WHERE s.user.id = :userId AND s.status IN :statuses")
+    Optional<StudySession> findByUserIdAndStatusIn(@Param("userId") UUID userId,
+                                                    @Param("statuses") SessionStatus... statuses);
 
     // === 기간별 세션 조회 ===
 
