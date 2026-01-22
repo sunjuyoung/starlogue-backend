@@ -252,7 +252,7 @@ public class DailyRecord { ... }
 | `user_id, record_date DESC` | 공부 은하수 시각화 (최신순) |
 
 ---
-## 🗄️ Repository 계층
+##  Repository 계층
 
 ```
 domain/

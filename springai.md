@@ -1,4 +1,4 @@
-## 🤖 Spring AI 통합 (1.1.2 + OpenAI + pgvector)
+## Spring AI 통합 (1.1.2 + OpenAI + pgvector)
 
 ### 버전 정보
 - **Spring AI**: 1.1.2 GA
